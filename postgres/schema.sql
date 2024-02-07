@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL,
     client_id SMALLINT,
     transaction_date bigint,
-    value SMALLINT,
+    value integer,
     transaction_type transaction_type,
     description varchar(10),
     CONSTRAINT transactions_pk PRIMARY KEY (client_id, id),

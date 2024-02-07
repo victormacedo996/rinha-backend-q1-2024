@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/postgres"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
 	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/request"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/response"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/validator"

@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -13,6 +14,8 @@ type Redis struct {
 
 var redisDbLock *Redis
 var once sync.Once
+
+const DB_LOCK_KEY_NAME = "lock"
 
 func GetInstance() *Redis {
 
@@ -39,14 +42,31 @@ func GetInstance() *Redis {
 	return redisDbLock
 }
 
-func (r *Redis) GetDbLock() string {
-	return ""
+func (r *Redis) GetDbLock(ctx context.Context) (string, error) {
+	val, err := r.conn.Get(ctx, DB_LOCK_KEY_NAME).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
 }
 
-func (r *Redis) LockDb() {
+func (r *Redis) LockDb(ctx context.Context) error {
+	err := r.conn.Set(ctx, DB_LOCK_KEY_NAME, true, 0).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
-func (r *Redis) UnlockDb() {
+func (r *Redis) UnlockDb(ctx context.Context) error {
+	err := r.conn.Set(ctx, DB_LOCK_KEY_NAME, false, 0).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }

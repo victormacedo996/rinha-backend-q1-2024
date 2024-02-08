@@ -49,20 +49,24 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 		}
 
 		for {
-			lock := redis.GetDbLock()
+			lock, err := redis.GetDbLock(r.Context())
+			if err != nil {
+				response.StatusInternalServerError(w, r, errors.New("Failed to aquire Db lock"))
+				return
+			}
 			if lock == "" {
 				break
 			}
 		}
 
-		redis.LockDb()
+		redis.LockDb(r.Context())
+		defer redis.UnlockDb(r.Context())
 
 		transaction_response, err := db.RegisterTransaction(r.Context(), id, incoming_transaction)
 		if err != nil {
 			response.StatusInternalServerError(w, r, errors.New("Error creating transaction"))
 			return
 		}
-		redis.UnlockDb()
 
 		response.StatusOk(w, r, transaction_response)
 		return

@@ -9,15 +9,15 @@ import (
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/config"
 )
 
-type dbInstance struct {
+type DbInstance struct {
 	pool *pgxpool.Pool
 }
 
-var postgres *dbInstance
+var postgres *DbInstance
 
 var once sync.Once
 
-func GetInstane() *dbInstance {
+func GetInstane() *DbInstance {
 	once.Do(
 		func() {
 			if postgres == nil {
@@ -43,7 +43,7 @@ func GetInstane() *dbInstance {
 					panic(fmt.Errorf("cannot create db pool %s", err))
 				}
 
-				postgres = &dbInstance{
+				postgres = &DbInstance{
 					pool: dbpool,
 				}
 			}

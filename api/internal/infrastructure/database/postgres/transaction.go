@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/response"
+	dtoRequest "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/request"
+	dtoResponse "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/response"
 )
 
 const INSERT_NEW_TRANSACTION = `
@@ -30,13 +31,13 @@ WITH new_transaction AS (
         RETURNING clients.balance AS new_balance, clients.client_limit;
 `
 
-func (d *dbInstance) RegisterTransaction(ctx context.Context, client_id int, value int, transaction_type string, description string) (*dto.TransactionResponse, error) {
+func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, transaction_request dtoRequest.TransactionRequest) (*dtoResponse.TransactionResponse, error) {
 
 	now := time.Now().Unix()
 
-	var transaction_response dto.TransactionResponse
+	var transaction_response dtoResponse.TransactionResponse
 
-	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": value, "transaction_type": transaction_type, "description": description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
+	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": transaction_request.Value, "transaction_type": transaction_request.Type, "description": transaction_request.Description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
 	if err != nil {
 		return nil, err
 	}

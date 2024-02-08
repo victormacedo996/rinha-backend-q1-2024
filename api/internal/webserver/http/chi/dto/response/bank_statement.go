@@ -2,6 +2,12 @@ package dto
 
 import "time"
 
+type Balance struct {
+	Client_balance      int       `json:"total"`
+	Bank_statement_date time.Time `json:"data_extrato"`
+	Limit               int       `json:"limite"`
+}
+
 type LatestTransactions struct {
 	Value          int       `json:"valor"`
 	Type           string    `json:"tipo"`
@@ -10,8 +16,6 @@ type LatestTransactions struct {
 }
 
 type BankStatement struct {
-	Client_balance      int                  `json:"total"`
-	Bank_statement_date time.Time            `json:"data_extrato"`
-	Limit               int                  `json:"limite"`
-	Last_transactions   []LatestTransactions `json:"ultimas_transacoes"`
+	Balance           Balance              `json:"saldo"`
+	Last_transactions []LatestTransactions `json:"ultimas_transacoes"`
 }

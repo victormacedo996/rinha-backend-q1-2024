@@ -39,6 +39,10 @@ func GetInstance() *Redis {
 	return redisDbLock
 }
 
+func (r *Redis) GetDbLock() string {
+	return ""
+}
+
 func (r *Redis) LockDb() {
 
 }

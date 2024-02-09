@@ -2,11 +2,13 @@ package response
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
 func bytes(resp interface{}) []byte {
 	data, _ := json.Marshal(resp)
+	fmt.Println(string(data))
 	return data
 
 }
@@ -69,4 +71,10 @@ func StatusConflict(w http.ResponseWriter, r *http.Request, err error) {
 func StatusInternalServerError(w http.ResponseWriter, r *http.Request, err error) {
 	data := map[string]interface{}{"error": err.Error()}
 	sendResponse(w, r, http.StatusInternalServerError, data)
+}
+
+// 422
+func StatusUnprocessableEntity(w http.ResponseWriter, r *http.Request, err error) {
+	data := map[string]interface{}{"error": err.Error()}
+	sendResponse(w, r, http.StatusUnprocessableEntity, data)
 }

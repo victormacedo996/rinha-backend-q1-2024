@@ -42,6 +42,12 @@ func GetInstane() *DbInstance {
 				if err != nil {
 					panic(fmt.Errorf("cannot create db pool %s", err))
 				}
+				ctx := context.Background()
+				defer ctx.Done()
+				err = dbpool.Ping(ctx)
+				if err != nil {
+					panic(err)
+				}
 
 				postgres = &DbInstance{
 					pool: dbpool,

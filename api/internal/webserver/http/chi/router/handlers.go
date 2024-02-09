@@ -3,11 +3,13 @@ package router
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/config"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/redis"
 	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/request"
@@ -19,13 +21,13 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 
 		urlId := chi.URLParam(r, "id")
 		if urlId == "" {
-			response.StatusBadRequest(w, r, errors.New("Empty id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("Empty id"))
 			return
 		}
 
 		id, err := strconv.Atoi(urlId)
 		if err != nil {
-			response.StatusBadRequest(w, r, errors.New("Invalid id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("Invalid id"))
 			return
 		}
 
@@ -38,13 +40,13 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 
 		err = json.NewDecoder(r.Body).Decode(&incoming_transaction)
 		if err != nil {
-			response.StatusBadRequest(w, r, errors.New("Error parsing request body"))
+			response.StatusUnprocessableEntity(w, r, errors.New("Error parsing request body"))
 			return
 		}
 
 		err = validator.Struct(incoming_transaction)
 		if err != nil {
-			response.StatusBadRequest(w, r, errors.New("Error validating request body"))
+			response.StatusUnprocessableEntity(w, r, errors.New("Error validating request body"))
 			return
 		}
 
@@ -54,7 +56,7 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 				response.StatusInternalServerError(w, r, errors.New("Failed to aquire Db lock"))
 				return
 			}
-			if lock == "" {
+			if lock != "1" {
 				break
 			}
 		}
@@ -64,7 +66,8 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 
 		transaction_response, err := db.RegisterTransaction(r.Context(), id, incoming_transaction)
 		if err != nil {
-			response.StatusInternalServerError(w, r, errors.New("Error creating transaction"))
+			fmt.Println(err)
+			response.StatusUnprocessableEntity(w, r, errors.New("Error creating transaction"))
 			return
 		}
 
@@ -73,12 +76,42 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 	}
 }
 
-func getBankStatement(w http.ResponseWriter, r *http.Request) {
-	response.StatusOk(w, r, map[string]interface{}{"status": "ok"})
-	return
+func getBankStatement(db *postgres.DbInstance, redis *redis.Redis) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		urlId := chi.URLParam(r, "id")
+		if urlId == "" {
+			response.StatusUnprocessableEntity(w, r, errors.New("Empty id"))
+			return
+		}
+
+		id, err := strconv.Atoi(urlId)
+		if err != nil {
+			response.StatusUnprocessableEntity(w, r, errors.New("Invalid id"))
+			return
+		}
+
+		if id > 5 {
+			response.StatusNotFound(w, r, errors.New("User not found"))
+			return
+		}
+
+		bank_statement, err := db.GetBankStatement(r.Context(), id)
+		if err != nil {
+			response.StatusBadRequest(w, r, errors.New("failed to retrieve bank statement"))
+			return
+		}
+
+		response.StatusOk(w, r, bank_statement)
+		return
+	}
+
 }
 
 func health(w http.ResponseWriter, r *http.Request) {
-	response.StatusOk(w, r, map[string]interface{}{"status": "ok"})
+
+	c := config.GetInstance()
+	response.StatusOk(w, r, map[string]interface{}{"status": "ok", "API_ID": c.WebServer.API_ID})
 	return
 }

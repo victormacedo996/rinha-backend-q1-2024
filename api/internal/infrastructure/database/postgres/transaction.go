@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -37,10 +39,16 @@ func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, tra
 
 	var transaction_response dtoResponse.TransactionResponse
 
+	data, _ := json.Marshal(transaction_request)
+	fmt.Println(string(data))
+
 	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": transaction_request.Value, "transaction_type": transaction_request.Type, "description": transaction_request.Description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
 	if err != nil {
 		return nil, err
 	}
+
+	data, _ = json.Marshal(transaction_response)
+	fmt.Println(string(data))
 
 	return &transaction_response, nil
 

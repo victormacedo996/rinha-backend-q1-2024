@@ -26,3 +26,11 @@ CREATE TABLE transactions_partition_6 PARTITION OF transactions FOR VALUES IN (6
 
 CREATE INDEX idx_transactions_composite
 ON transactions (value, transaction_type, transaction_date DESC);
+
+INSERT INTO clients (balance, client_limit)
+VALUES 
+(0, 100000),
+(0, 80000),
+(0, 1000000),
+(0, 10000000),
+(0, 500000);

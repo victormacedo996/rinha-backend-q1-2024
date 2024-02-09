@@ -9,6 +9,7 @@ import (
 type WebServer struct {
 	SERVER_PORT int
 	TIMEOUT     int
+	API_ID      string
 }
 
 type Database struct {
@@ -46,6 +47,7 @@ func GetInstance() *Config {
 				webserver_config := WebServer{
 					SERVER_PORT: parseEnvToInt("SERVER_PORT", "5000"),
 					TIMEOUT:     parseEnvToInt("TIMEOUT", "10"),
+					API_ID:      getEnv("API_ID", ""),
 				}
 
 				database_config := Database{
@@ -58,7 +60,12 @@ func GetInstance() *Config {
 					MIN_CONS: parseEnvToInt("POSTGRES_MAX_CONNS", "5"),
 				}
 
-				redis_config := Redis{}
+				redis_config := Redis{
+					HOST: getEnv("REDIS_URL", "localhost:6379"),
+					DB:   parseEnvToInt("REDIS_DB", "0"),
+					PWD:  getEnv("REDIS_PASSWORD", ""),
+					USER: getEnv("REDIS_USER", ""),
+				}
 
 				config = &Config{
 					WebServer: webserver_config,

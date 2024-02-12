@@ -4,25 +4,25 @@ import (
 	"context"
 	"time"
 
-	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/response"
+	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 )
 
 const GET_FIRST_10_TRANSACTIONS_BY_DATE = `
 SELECT
-    t.transaction_date,
-    t.value,
-    t.transaction_type,
-    t.description,
+    COALESCE (t.transaction_date, 0) AS transaction_date,
+    COALESCE (t.value, 0) AS value,
+	COALESCE (t.transaction_type, 'd') AS transaction_type,
+    COALESCE (t.description, 'warm up') AS description,
     c.balance AS client_balance,
     c.client_limit
 FROM
-    transactions t
-JOIN
-    clients c ON t.client_id = c.id
+    clients c
+LEFT JOIN
+    transactions t ON c.id = t.client_id
 WHERE
-    t.client_id = $1
+    c.id = $1
 ORDER BY
-    t.transaction_date DESC
+    transaction_date DESC
 LIMIT 10;
 `
 
@@ -43,14 +43,13 @@ func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.
 			timestamp   int64
 		)
 
-		err := rows.Scan(&timestamp, &transaction.Value, &transaction.Type, &transaction.Description, &balance.Client_balance, &balance.Limit)
+		err = rows.Scan(&timestamp, &transaction.Value, &transaction.Type, &transaction.Description, &balance.Client_balance, &balance.Limit)
 		if err != nil {
 			return nil, err
 		}
 
 		transaction.Carried_out_in = time.Unix(timestamp, 0)
 
-		latestTransactions = append(latestTransactions, transaction)
 	}
 
 	balance.Bank_statement_date = time.Now()

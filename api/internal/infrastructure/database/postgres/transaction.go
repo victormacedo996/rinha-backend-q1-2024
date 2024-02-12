@@ -2,13 +2,12 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	dtoRequest "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/request"
-	dtoResponse "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/dto/response"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/service"
+	dtoRequest "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
+	dtoResponse "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 )
 
 const INSERT_NEW_TRANSACTION = `
@@ -37,19 +36,14 @@ func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, tra
 
 	now := time.Now().Unix()
 
+	value := service.CheckDebit(transaction_request.Type, transaction_request.Value)
+
 	var transaction_response dtoResponse.TransactionResponse
 
-	data, _ := json.Marshal(transaction_request)
-	fmt.Println(string(data))
-
-	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": transaction_request.Value, "transaction_type": transaction_request.Type, "description": transaction_request.Description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
+	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": value, "transaction_type": transaction_request.Type, "description": transaction_request.Description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
 	if err != nil {
 		return nil, err
 	}
-
-	data, _ = json.Marshal(transaction_response)
-	fmt.Println(string(data))
-
 	return &transaction_response, nil
 
 }

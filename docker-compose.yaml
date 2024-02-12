@@ -13,22 +13,17 @@ services:
     ports:
         # Obrigatório expor/usar a porta 9999 no load balancer!
       - "9999:9999" 
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.17"
-    #       memory: "10MB"
-
-
-
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 90MB
 
   api1: &api
     build:
       context: .
       dockerfile: ./api/build/Dockerfile
     container_name: rinha_api-01
-    # ports:
-    #   - 8080:8080
     depends_on:
       db:
         condition: service_healthy
@@ -44,11 +39,11 @@ services:
       POSTGRES_MAX_CONNS: 5
       REDIS_URL: redis:6379
       API_ID: 1
-  # deploy:
-  #   resources:
-  #     limits:
-  #       cpus: 1
-  #       memory: 150MB
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 100MB
 
   api2:
     <<: *api
@@ -69,18 +64,15 @@ services:
     image: redis:7.2.4-alpine3.19
     command: redis-server
     container_name: rinha_redis
-    # ports:
-    #   - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 10s
       timeout: 5s
-      retries: 5
-  # deploy:
-  #   resources:
-  #     limits:
-  #       cpus: 1
-  #       memory: 150MB
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 10MB
 
   db:
     image: postgres:16.1-alpine3.19
@@ -95,8 +87,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  # deploy:
-  #   resources:
-  #     limits:
-  #       cpus: 1
-  #       memory: 150MB
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: 250MB

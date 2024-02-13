@@ -22,7 +22,6 @@ CREATE TABLE transactions_partition_2 PARTITION OF transactions FOR VALUES IN (2
 CREATE TABLE transactions_partition_3 PARTITION OF transactions FOR VALUES IN (3);
 CREATE TABLE transactions_partition_4 PARTITION OF transactions FOR VALUES IN (4);
 CREATE TABLE transactions_partition_5 PARTITION OF transactions FOR VALUES IN (5);
-CREATE TABLE transactions_partition_6 PARTITION OF transactions FOR VALUES IN (6);
 
 CREATE INDEX idx_transactions_composite
 ON transactions (value, transaction_type, transaction_date DESC);

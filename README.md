@@ -26,3 +26,7 @@
 - Execute o docker-compose: `docker-compose up -d` ou utiliza o make `make run`
 - Aguarde os serviços subirem completamente.
 - Acesse a API através de: http://localhost:9999
+
+## Resultados
+
+![Gatling Test](./img/gatling_test.png)

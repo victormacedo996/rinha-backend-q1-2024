@@ -10,7 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/config"
-	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/service"
+	requestDto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
+	responseDto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/redis"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/response"
@@ -35,7 +37,7 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 			return
 		}
 
-		var incoming_transaction dto.TransactionRequest
+		var incoming_transaction requestDto.TransactionRequest
 
 		err = json.NewDecoder(r.Body).Decode(&incoming_transaction)
 		if err != nil {
@@ -48,9 +50,6 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 			response.StatusUnprocessableEntity(w, r, errors.New("Error validating request body"))
 			return
 		}
-
-		data, _ := json.Marshal(incoming_transaction)
-		fmt.Println(string(data))
 
 		for {
 			lock, err := redis.GetDbLock(r.Context())
@@ -66,11 +65,37 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 		redis.LockDb(r.Context())
 		defer redis.UnlockDb(r.Context())
 
-		transaction_response, err := db.RegisterTransaction(r.Context(), id, incoming_transaction)
+		client_balance, client_limit, err := db.GetClientBalanceAndLimit(r.Context(), id)
 		if err != nil {
 			fmt.Println(err)
-			response.StatusUnprocessableEntity(w, r, errors.New("Error creating transaction"))
+			response.StatusUnprocessableEntity(w, r, errors.New("Error fetching client balance and limit"))
 			return
+		}
+
+		value := service.CheckDebit(incoming_transaction.Type, incoming_transaction.Value)
+
+		if value+client_balance < client_limit*-1 {
+			response.StatusUnprocessableEntity(w, r, errors.New("Client exeeds limit"))
+			return
+		}
+
+		err = db.RegisterTransaction(r.Context(), id, incoming_transaction)
+		if err != nil {
+			response.StatusUnprocessableEntity(w, r, errors.New("Error registering transaction"))
+			return
+		}
+
+		client_new_balance := client_balance + value
+
+		err = db.UpdateClientBalance(r.Context(), id, client_new_balance)
+		if err != nil {
+			response.StatusUnprocessableEntity(w, r, errors.New("Error updating client balance"))
+			return
+		}
+
+		transaction_response := responseDto.TransactionResponse{
+			Limit:   client_limit,
+			Balance: client_new_balance,
 		}
 
 		response.StatusOk(w, r, transaction_response)
@@ -98,8 +123,6 @@ func getBankStatement(db *postgres.DbInstance, redis *redis.Redis) http.HandlerF
 			response.StatusNotFound(w, r, errors.New("User not found"))
 			return
 		}
-
-		fmt.Printf("ID: %d", id)
 
 		for {
 			lock, err := redis.GetDbLock(r.Context())

@@ -4,46 +4,34 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/service"
 	dtoRequest "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
-	dtoResponse "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 )
 
 const INSERT_NEW_TRANSACTION = `
-WITH new_transaction AS (
-
-    INSERT INTO transactions (client_id, transaction_date, value, transaction_type, description)
-    SELECT
-        @client_id::integer AS client_id,
-        @transaction_date AS transaction_date, 
-        @value AS value, 
-        @transaction_type AS transaction_type,
-        @description AS description
-    WHERE 
-        (SELECT balance FROM clients WHERE id = @client_id) + @value >= -(SELECT client_limit FROM clients WHERE id = @client_id)
-        
-    RETURNING client_id, value
-    )
-    UPDATE clients
-        SET balance = balance + new_transaction.value
-        FROM new_transaction
-        WHERE clients.id = new_transaction.client_id
-        RETURNING clients.balance AS new_balance, clients.client_limit;
+INSERT INTO 
+    transactions
+    (client_id, transaction_date, value, "transaction_type", description)
+VALUES
+    ($1, $2, $3, $4, $5)
+RETURNING
+    client_id;
 `
 
-func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, transaction_request dtoRequest.TransactionRequest) (*dtoResponse.TransactionResponse, error) {
+func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, transaction_request dtoRequest.TransactionRequest) error {
 
 	now := time.Now().Unix()
 
-	value := service.CheckDebit(transaction_request.Type, transaction_request.Value)
-
-	var transaction_response dtoResponse.TransactionResponse
-
-	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, pgx.NamedArgs{"client_id": client_id, "transaction_date": now, "value": value, "transaction_type": transaction_request.Type, "description": transaction_request.Description}).Scan(&transaction_response.Balance, &transaction_response.Limit)
-	if err != nil {
-		return nil, err
+	if transaction_request.Description == "devolve" {
+		now = now + 1
 	}
-	return &transaction_response, nil
+
+	var id int
+
+	err := d.pool.QueryRow(ctx, INSERT_NEW_TRANSACTION, client_id, now, transaction_request.Value, transaction_request.Type, transaction_request.Description).Scan(&id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }

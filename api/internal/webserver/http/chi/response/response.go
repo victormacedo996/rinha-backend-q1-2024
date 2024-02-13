@@ -2,13 +2,11 @@ package response
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
 func bytes(resp interface{}) []byte {
 	data, _ := json.Marshal(resp)
-	fmt.Println(string(data))
 	return data
 
 }

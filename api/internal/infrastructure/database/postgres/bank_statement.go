@@ -7,7 +7,7 @@ import (
 	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 )
 
-const GET_FIRST_10_TRANSACTIONS_BY_DATE = `
+const SELECT_FIRST_10_TRANSACTIONS_BY_DECREASING_DATE = `
 SELECT
     COALESCE (t.transaction_date, 0) AS transaction_date,
     COALESCE (t.value, 0) AS value,
@@ -27,7 +27,7 @@ LIMIT 10;
 `
 
 func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.BankStatement, error) {
-	rows, err := d.pool.Query(ctx, GET_FIRST_10_TRANSACTIONS_BY_DATE, client_id)
+	rows, err := d.pool.Query(ctx, SELECT_FIRST_10_TRANSACTIONS_BY_DECREASING_DATE, client_id)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +49,10 @@ func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.
 		}
 
 		transaction.Carried_out_in = time.Unix(timestamp, 0)
+
+		if transaction.Description != "warm up" {
+			latestTransactions = append(latestTransactions, transaction)
+		}
 
 	}
 

@@ -14,7 +14,7 @@ import (
 	requestDto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
 	responseDto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
-	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/redis"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/dbLock/redis"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/chi/response"
 )
 
@@ -22,18 +22,18 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 	return func(w http.ResponseWriter, r *http.Request) {
 		urlId := chi.URLParam(r, "id")
 		if urlId == "" {
-			response.StatusUnprocessableEntity(w, r, errors.New("Empty id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("empty id"))
 			return
 		}
 
 		id, err := strconv.Atoi(urlId)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Invalid id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("invalid id"))
 			return
 		}
 
 		if id > 5 {
-			response.StatusNotFound(w, r, errors.New("User not found"))
+			response.StatusNotFound(w, r, errors.New("user not found"))
 			return
 		}
 
@@ -41,20 +41,20 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 
 		err = json.NewDecoder(r.Body).Decode(&incoming_transaction)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Error parsing request body"))
+			response.StatusUnprocessableEntity(w, r, errors.New("error parsing request body"))
 			return
 		}
 
 		err = validator.Struct(incoming_transaction)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Error validating request body"))
+			response.StatusUnprocessableEntity(w, r, errors.New("error validating request body"))
 			return
 		}
 
 		for {
 			lock, err := redis.GetDbLock(r.Context())
 			if err != nil {
-				response.StatusInternalServerError(w, r, errors.New("Failed to aquire Db lock"))
+				response.StatusInternalServerError(w, r, errors.New("failed to aquire Db lock"))
 				return
 			}
 			if lock != "1" {
@@ -68,20 +68,20 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 		client_balance, client_limit, err := db.GetClientBalanceAndLimit(r.Context(), id)
 		if err != nil {
 			fmt.Println(err)
-			response.StatusUnprocessableEntity(w, r, errors.New("Error fetching client balance and limit"))
+			response.StatusUnprocessableEntity(w, r, errors.New("error fetching client balance and limit"))
 			return
 		}
 
 		value := service.CheckDebit(incoming_transaction.Type, incoming_transaction.Value)
 
 		if value+client_balance < client_limit*-1 {
-			response.StatusUnprocessableEntity(w, r, errors.New("Client exeeds limit"))
+			response.StatusUnprocessableEntity(w, r, errors.New("client exeeds limit"))
 			return
 		}
 
 		err = db.RegisterTransaction(r.Context(), id, incoming_transaction)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Error registering transaction"))
+			response.StatusUnprocessableEntity(w, r, errors.New("error registering transaction"))
 			return
 		}
 
@@ -89,7 +89,7 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 
 		err = db.UpdateClientBalance(r.Context(), id, client_new_balance)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Error updating client balance"))
+			response.StatusUnprocessableEntity(w, r, errors.New("error updating client balance"))
 			return
 		}
 
@@ -99,7 +99,6 @@ func createTransaction(validator *validator.Validate, db *postgres.DbInstance, r
 		}
 
 		response.StatusOk(w, r, transaction_response)
-		return
 	}
 }
 
@@ -109,25 +108,25 @@ func getBankStatement(db *postgres.DbInstance, redis *redis.Redis) http.HandlerF
 
 		urlId := chi.URLParam(r, "id")
 		if urlId == "" {
-			response.StatusUnprocessableEntity(w, r, errors.New("Empty id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("empty id"))
 			return
 		}
 
 		id, err := strconv.Atoi(urlId)
 		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("Invalid id"))
+			response.StatusUnprocessableEntity(w, r, errors.New("invalid id"))
 			return
 		}
 
 		if id > 5 {
-			response.StatusNotFound(w, r, errors.New("User not found"))
+			response.StatusNotFound(w, r, errors.New("user not found"))
 			return
 		}
 
 		for {
 			lock, err := redis.GetDbLock(r.Context())
 			if err != nil {
-				response.StatusInternalServerError(w, r, errors.New("Failed to aquire Db lock"))
+				response.StatusInternalServerError(w, r, errors.New("failed to aquire Db lock"))
 				return
 			}
 			if lock != "1" {
@@ -146,7 +145,6 @@ func getBankStatement(db *postgres.DbInstance, redis *redis.Redis) http.HandlerF
 		}
 
 		response.StatusOk(w, r, bank_statement)
-		return
 	}
 
 }
@@ -155,5 +153,4 @@ func health(w http.ResponseWriter, r *http.Request) {
 
 	c := config.GetInstance()
 	response.StatusOk(w, r, map[string]interface{}{"status": "ok", "API_ID": c.WebServer.API_ID})
-	return
 }

@@ -8,8 +8,14 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/config"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
-	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/redis"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/dbLock/redis"
 )
+
+type ChiWebserver struct{}
+
+func New() *ChiWebserver {
+	return &ChiWebserver{}
+}
 
 func setUpRoutes(r *chi.Mux, db *postgres.DbInstance, redis *redis.Redis, validator *validator.Validate) {
 	r.Post("/clientes/{id}/transacoes", createTransaction(validator, db, redis))
@@ -19,7 +25,7 @@ func setUpRoutes(r *chi.Mux, db *postgres.DbInstance, redis *redis.Redis, valida
 
 }
 
-func Start(db *postgres.DbInstance, redis *redis.Redis, validator *validator.Validate) {
+func (cw *ChiWebserver) Start(db *postgres.DbInstance, redis *redis.Redis, validator *validator.Validate) {
 	router := chi.NewRouter()
 	setUpRoutes(router, db, redis, validator)
 

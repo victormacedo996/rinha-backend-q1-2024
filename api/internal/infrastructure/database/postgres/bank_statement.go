@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dto "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/response"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/entity"
 )
 
 const SELECT_FIRST_10_TRANSACTIONS_BY_DECREASING_DATE = `
@@ -26,7 +26,7 @@ ORDER BY
 LIMIT 10;
 `
 
-func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.BankStatement, error) {
+func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*entity.BankStatement, error) {
 	rows, err := d.pool.Query(ctx, SELECT_FIRST_10_TRANSACTIONS_BY_DECREASING_DATE, client_id)
 	if err != nil {
 		return nil, err
@@ -34,12 +34,12 @@ func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.
 
 	defer rows.Close()
 
-	var latestTransactions []dto.LatestTransactions
-	var balance dto.Balance
+	var latestTransactions []entity.LatestTransactions
+	var balance entity.Balance
 
 	for rows.Next() {
 		var (
-			transaction dto.LatestTransactions
+			transaction entity.LatestTransactions
 			timestamp   int64
 		)
 
@@ -58,7 +58,7 @@ func (d *DbInstance) GetBankStatement(ctx context.Context, client_id int) (*dto.
 
 	balance.Bank_statement_date = time.Now()
 
-	bank_statement := dto.BankStatement{
+	bank_statement := entity.BankStatement{
 		Balance:           balance,
 		Last_transactions: latestTransactions,
 	}

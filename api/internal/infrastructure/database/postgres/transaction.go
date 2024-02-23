@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dtoRequest "github.com/victormacedo996/rinha-backend-q1-2024/internal/dto/request"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/entity"
 )
 
 const INSERT_NEW_TRANSACTION = `
@@ -17,7 +17,7 @@ RETURNING
     client_id;
 `
 
-func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, transaction_request dtoRequest.TransactionRequest) error {
+func (d *DbInstance) RegisterTransaction(ctx context.Context, client_id int, transaction_request entity.TransactionRequest) error {
 
 	now := time.Now().Unix()
 

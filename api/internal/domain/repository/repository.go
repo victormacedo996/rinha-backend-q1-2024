@@ -50,7 +50,7 @@ func (r *Repository) UpdateClientBalance(ctx context.Context, client_id int, new
 }
 
 func (r *Repository) RegisterTransaction(ctx context.Context, client_id int, transaction_request entity.TransactionRequest) error {
-	db_transaction_request := converters.NewTransactionRequestFromDomain(transaction_request)
+	db_transaction_request := converters.TransactionRequestFromDomainToDb(transaction_request)
 	err := r.db.RegisterTransaction(ctx, client_id, db_transaction_request)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (r *Repository) GetBankStatement(ctx context.Context, client_id int) (*enti
 		return nil, err
 	}
 
-	bank_statement := converters.NewBankStatementFromDb(*db_bank_statement)
+	bank_statement := converters.BankStatementFromDbToDomain(*db_bank_statement)
 
 	return &bank_statement, nil
 }

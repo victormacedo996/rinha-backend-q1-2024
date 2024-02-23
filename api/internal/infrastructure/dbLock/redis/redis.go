@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -52,6 +53,18 @@ func (r *Redis) GetDbLock(ctx context.Context) (string, error) {
 }
 
 func (r *Redis) LockDb(ctx context.Context) error {
+
+	for {
+		lock, err := r.GetDbLock(ctx)
+		if err != nil {
+			newErr := errors.New("failed to aquire DB lock")
+			return errors.Join(newErr, err)
+		}
+		if lock != "1" {
+			break
+		}
+	}
+
 	err := r.conn.Set(ctx, DB_LOCK_KEY_NAME, true, 0).Err()
 	if err != nil {
 		return err

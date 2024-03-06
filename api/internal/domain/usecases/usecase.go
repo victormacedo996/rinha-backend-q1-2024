@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	playValidator "github.com/go-playground/validator/v10"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/entity"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/repository"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/service"
@@ -13,21 +14,23 @@ import (
 )
 
 type Usecase struct {
-	repo   *repository.Repository
-	dbLock dblock.DbLock
+	repo      *repository.Repository
+	dbLock    dblock.DbLock
+	validator *playValidator.Validate
 }
 
 var usecase *Usecase
 
 var once sync.Once
 
-func GetInstance(repo *repository.Repository, dblock dblock.DbLock) *Usecase {
+func GetInstance(repo *repository.Repository, dblock dblock.DbLock, validator *playValidator.Validate) *Usecase {
 	if usecase == nil {
 		once.Do(
 			func() {
 				usecase = &Usecase{
-					repo:   repo,
-					dbLock: dblock,
+					repo:      repo,
+					dbLock:    dblock,
+					validator: validator,
 				}
 			},
 		)
@@ -38,7 +41,13 @@ func GetInstance(repo *repository.Repository, dblock dblock.DbLock) *Usecase {
 
 func (u *Usecase) CreateTransactionUsecase(ctx context.Context, client_id int, incoming_transaction entity.TransactionRequest) (*entity.TransactionResponse, error) {
 
-	err := u.dbLock.LockDb(ctx)
+	err := u.validator.Struct(incoming_transaction)
+	if err != nil {
+		newErr := errors.New("error validating new transaction")
+		return nil, errors.Join(newErr, err)
+	}
+
+	err = u.dbLock.LockDb(ctx)
 	if err != nil {
 		return nil, err
 	}

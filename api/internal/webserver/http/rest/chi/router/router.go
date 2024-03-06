@@ -18,7 +18,7 @@ func New() *ChiWebserver {
 }
 
 func setUpRoutes(r *chi.Mux, usecase *usecase.Usecase, validator *validator.Validate) {
-	r.Post("/clientes/{id}/transacoes", createTransaction(validator, usecase))
+	r.Post("/clientes/{id}/transacoes", createTransaction(usecase))
 	r.Get("/clientes/{id}/extrato", getBankStatement(usecase))
 	r.Get("/health", health)
 

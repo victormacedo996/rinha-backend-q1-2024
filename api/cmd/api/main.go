@@ -8,8 +8,8 @@ import (
 	usecase "github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/usecases"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/database/postgres"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/infrastructure/dbLock/redis"
+	"github.com/victormacedo996/rinha-backend-q1-2024/internal/validator"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/rest/chi/router"
-	"github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/rest/validator"
 )
 
 func main() {
@@ -18,6 +18,9 @@ func main() {
 	fmt.Println("")
 	fmt.Println("Creating Database instance...")
 	db := postgres.GetInstane()
+	if db == nil {
+		panic("db cannot be created")
+	}
 	fmt.Println("Creating Database lock instance...")
 
 	redis := redis.GetInstance()
@@ -25,6 +28,9 @@ func main() {
 	fmt.Println("Creating Validator instance...")
 
 	validator := validator.GetInstance()
+	if validator == nil {
+		panic("cannot create validator")
+	}
 	ctx := context.Background()
 
 	fmt.Println("Unlocking Database...")
@@ -37,7 +43,7 @@ func main() {
 
 	repo := repository.GetInstance(db)
 	fmt.Println("Creating Usecase instance...")
-	uc := usecase.GetInstance(repo, redis)
+	uc := usecase.GetInstance(repo, redis, validator)
 
 	router.New().Start(uc, validator)
 

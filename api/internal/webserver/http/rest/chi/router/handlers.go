@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/config"
 	"github.com/victormacedo996/rinha-backend-q1-2024/internal/converters"
 	usecase "github.com/victormacedo996/rinha-backend-q1-2024/internal/domain/usecases"
@@ -15,7 +14,7 @@ import (
 	requestDto "github.com/victormacedo996/rinha-backend-q1-2024/internal/webserver/http/rest/dto/request"
 )
 
-func createTransaction(validator *validator.Validate, usecase *usecase.Usecase) http.HandlerFunc {
+func createTransaction(usecase *usecase.Usecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		urlId := chi.URLParam(r, "id")
 		if urlId == "" {
@@ -39,12 +38,6 @@ func createTransaction(validator *validator.Validate, usecase *usecase.Usecase) 
 		err = json.NewDecoder(r.Body).Decode(&incoming_transaction)
 		if err != nil {
 			response.StatusUnprocessableEntity(w, r, errors.New("error parsing request body"))
-			return
-		}
-
-		err = validator.Struct(incoming_transaction)
-		if err != nil {
-			response.StatusUnprocessableEntity(w, r, errors.New("error validating request body"))
 			return
 		}
 
